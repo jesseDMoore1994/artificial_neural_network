@@ -15,10 +15,12 @@ class Neuron:
         self.net_input = None
         self.weights_in = []
         self.bias_in = None
+        self.deriv_cost_wrt_net_input = None
 
     def __str__(self):
         return "\n".join([
             "activation_value: {}".format(self.activation_value),
+            "net_input: {}".format(self.net_input),
             "weights_in: {}".format(self.weights_in),
             "bias_in: {}".format(self.bias_in),
         ])
@@ -34,9 +36,12 @@ class BinaryNeuron(Neuron):
     def binary_sigmoid_derivative(self, x):
         return binary_sigmoid(x)*(1 - binary_sigmoid(x))
 
-    def calculate_activation(self, net_input):
+    def calculate_activation_and_store_input(self, net_input):
+        self.net_input = net_input
         self.activation_value = self.binary_sigmoid(net_input)
 
+    def calculate_deriv_activation_wrt_net_input(self):
+        self.deriv_activation_wrt_net_input = self.binary_sigmoid_derivative(net_input)
 
 class BipolarNeuron(Neuron):
     def __init__(self):
@@ -48,8 +53,12 @@ class BipolarNeuron(Neuron):
     def bipolar_sigmoid_derivative(self, x):
         return 1 - bipolar_sigmoid(x)**2
 
-    def calculate_activation(self, net_input):
+    def calculate_activation_and_store_input(self, net_input):
+        self.net_input = net_input
         self.activation_value = self.bipolar_sigmoid(net_input)
+
+    def calculate_deriv_activation_wrt_net_input(self):
+        self.deriv_activation_wrt_net_input = self.bipolar_sigmoid_derivative(net_input)
 
 
 NEURON_MAP = {'BinaryNeuron': BinaryNeuron, 'BipolarNeuron': BipolarNeuron}
@@ -70,7 +79,8 @@ class NetworkLayer:
             for i, previous_neuron in enumerate(previous_layer.neurons):
                 net_input = net_input + (neuron.weights_in[i]*previous_neuron.activation_value)
             net_input = net_input + neuron.bias_in
-            neuron.calculate_activation(net_input)
+            #Calculate activation and store net input
+            neuron.calculate_activation_and_store_input(net_input)
 
 
 class InputLayer(NetworkLayer):
@@ -162,16 +172,7 @@ class NeuralNetwork:
             neuron.bias_in = random()
         return biases
 
-    def mse(self):
-        squared_errors = []
-        print('calculating modified MSE')
-        for i, output_neuron in enumerate(self.layers[-1].neurons):
-            print('adding squared error = ({} - {})^2'.format(self.targets[0][i], output_neuron.activation_value))
-            squared_errors.append((self.targets[0][i] - output_neuron.activation_value)**2)
-        print('returning (sum({}) / 2*{})'.format(squared_errors, len(squared_errors)))
-        return sum(squared_errors)/2*len(squared_errors)
-
-    def train(self):
+    def feed_forward(self):
         #apply input vector to layer 0
         print("Applying vector {} to ANN, target is {}.".format(self.inputs[0], self.targets[0]))
         for i, val in enumerate(self.inputs[0]):
@@ -184,9 +185,55 @@ class NeuralNetwork:
                 continue
             layer.calculate_activation_for_neurons(self.layers[l-1])
 
-        mse = self.mse()
 
-        print(mse)
+    # returns 1/n * sum((y - t)**2) where n is number of output values/target values
+    def mse(self):
+        squared_errors = []
+        print('calculating MSE')
+        for i, output_neuron in enumerate(self.layers[-1].neurons):
+            print('adding squared error = ({} - {})^2'.format(self.targets[0][i], output_neuron.activation_value))
+            squared_errors.append((self.targets[0][i] - output_neuron.activation_value)**2)
+        print('returning (sum({}) / {})'.format(squared_errors, len(squared_errors)))
+        return sum(squared_errors)/len(squared_errors)
+
+    def deriv_mse_wrt_Yj(self, Yj, Tj, n):
+    #Yj is output of jth neuron in output layer
+    #Tj is target value of jth neuron in output layer
+    #n is number of values in Y
+    # dJ/dYj is d(MSE)/dYj = d/dYj( 1/n * [sum(Yj - Tj)**2 for j=1 to n] )
+    # = 2/n * (Yj - Tj)
+        return (2/n) * (Yj - Tj)
+
+    def back_propigate(self):
+        #Start with the output layer
+        #first we are calculating gradient of loss wrt net input for each node in activation layer
+        #grad_J_wrt_Zj[j]: Gradient of J wrt net input for jth node 
+        grad_J_wrt_Zj = []
+        for j, neuron in enumerate(self.layers[-1].neurons):
+            #Gradient of error wrt net input for each neuron in output
+            #calculated by chain rule GRAD(J, Zj) = J wrt Yj x Yj wrt Zj
+            # dJ/dYj is derivative of mse wrt Yj or derivative of loss wrt output
+            J_wrt_Yj = self.deriv_mse_wrt_Yj(
+                neuron.activation_value, 
+                self.targets[0][j], 
+                len(self.layers[-1].neurons)
+            )
+            # dYj/dZj is derivative of sigmoid function wrt net input
+            # since this is dependent on the type of neuron being used
+            # we delegate it to the neuron. This is derivative of activation
+            # function wrt to the net input to the activation function
+            neuron.calculate_deriv_activation_wrt_net_input()
+            grad_J_wrt_Zj.append(J_wrt_Yj * neuron.deriv_activation_wrt_net_input)
+
+    def train(self):
+
+        #feed forward input vector
+        self.feed_forward()
+
+        #calculate loss using MSE
+        J = self.mse()
+
+        print(J)
 
         #rotate input and target for next training call
         self.inputs = self.inputs[1:] + self.inputs[:1]
