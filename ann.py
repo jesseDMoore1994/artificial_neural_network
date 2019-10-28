@@ -13,11 +13,14 @@ class Neuron:
     def __init__(self):
         self.activation_value = None
         self.net_input = None
+        self.weights_in = []
+        self.bias_in = None
 
     def __str__(self):
         return "\n".join([
-            "net_input: {}".format(self.net_input),
             "activation_value: {}".format(self.activation_value),
+            "weights_in: {}".format(self.weights_in),
+            "bias_in: {}".format(self.bias_in),
         ])
 
 
@@ -55,34 +58,29 @@ NEURON_MAP = {'BinaryNeuron': BinaryNeuron, 'BipolarNeuron': BipolarNeuron}
 class NetworkLayer:
     def __init__(self, num_units, neuron_class):
         self.neurons = [ neuron_class() for unit in range(num_units) ]
-        self.weights, self.biases = [], []
 
     def __str__(self):
-        strs = ["weights_in: {}".format(self.weights)]
-        strs = strs + ["biases_in: {}".format(self.biases)]
-        strs = strs + ["neuron({}):\n{}".format(i, neuron) for i, neuron in enumerate(self.neurons)]
+        strs = ["neuron({}):\n{}".format(i, neuron) for i, neuron in enumerate(self.neurons)]
         return '\n'.join(strs)
+
+    def calculate_activation_for_neurons(self, previous_layer):
+        for neuron in self.neurons:
+            #Calculate net input for each neuron first
+            net_input = 0
+            for i, previous_neuron in enumerate(previous_layer.neurons):
+                net_input = net_input + (neuron.weights_in[i]*previous_neuron.activation_value)
+            net_input = net_input + neuron.bias_in
+            neuron.calculate_activation(net_input)
 
 
 class InputLayer(NetworkLayer):
     def __init__(self, input_vector):
         super().__init__(len(input_vector), Neuron)
-        for i, value in enumerate(input_vector):
-            self.neurons[i].activation_value = value
-            self.neurons[i].net_input = value
-        self.input_vector = input_vector
-
-    def __str__(self):
-        return '{}\n{}'.format("input vector = {}".format(self.input_vector), super().__str__())
 
 
 class OutputLayer(NetworkLayer):
     def __init__(self, target_vector, neuron_class):
         super().__init__(len(target_vector), neuron_class)
-        self.target_vector = target_vector
-
-    def __str__(self):
-        return '{}\n{}'.format(super().__str__(), "target vector = {}".format(self.target_vector))
 
 
 class NeuralNetwork:
@@ -153,23 +151,49 @@ class NeuralNetwork:
             layer.biases = self._create_biases(layer)
 
     def _create_weights(self, this_layer, previous_layer):
-        weights = []
         for neuron in this_layer.neurons:
             weights_on_neuron = []
             for previous_neuron in previous_layer.neurons:
-                weights_on_neuron.append(random())
-            weights.append(weights_on_neuron)
-        return weights
-
+                neuron.weights_in.append(random())
 
     def _create_biases(self, this_layer):
         biases = []
         for neuron in this_layer.neurons:
-            biases.append(random())
+            neuron.bias_in = random()
         return biases
 
+    def mse(self):
+        squared_errors = []
+        print('calculating modified MSE')
+        for i, output_neuron in enumerate(self.layers[-1].neurons):
+            print('adding squared error = ({} - {})^2'.format(self.targets[0][i], output_neuron.activation_value))
+            squared_errors.append((self.targets[0][i] - output_neuron.activation_value)**2)
+        print('returning (sum({}) / 2*{})'.format(squared_errors, len(squared_errors)))
+        return sum(squared_errors)/2*len(squared_errors)
 
-print(NeuralNetwork({
+    def train(self):
+        #apply input vector to layer 0
+        print("Applying vector {} to ANN, target is {}.".format(self.inputs[0], self.targets[0]))
+        for i, val in enumerate(self.inputs[0]):
+            self.layers[0].neurons[i].activation_value = val
+
+        #create weights and biases
+        for l, layer in enumerate(self.layers):
+            if l == 0:
+                #if l == 0 we are on first layer, value is the input
+                continue
+            layer.calculate_activation_for_neurons(self.layers[l-1])
+
+        mse = self.mse()
+
+        print(mse)
+
+        #rotate input and target for next training call
+        self.inputs = self.inputs[1:] + self.inputs[:1]
+        self.targets = self.targets[1:] + self.targets[:1]
+
+
+ann = NeuralNetwork({
     'input_layer': {
         'input_vectors': BINARY_X
     },
@@ -181,4 +205,7 @@ print(NeuralNetwork({
         'target_vectors': BINARY_T,
         'neuron_type': 'BinaryNeuron'
     },
-}))
+})
+print(ann)
+ann.train()
+print(ann)
