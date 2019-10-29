@@ -207,15 +207,15 @@ class NeuralNetwork:
     def back_propigate(self):
         #Start with the output layer
         #first we are calculating gradient of loss wrt net input for each node in activation layer
-        #grad_J_wrt_Zj[j]: Gradient of J wrt net input for jth node 
+        #grad_J_wrt_Zj[j]: Gradient of J wrt net input for jth node
         grad_J_wrt_Zj = []
         for j, neuron in enumerate(self.layers[-1].neurons):
             #Gradient of error wrt net input for each neuron in output
             #calculated by chain rule GRAD(J, Zj) = J wrt Yj x Yj wrt Zj
             # dJ/dYj is derivative of mse wrt Yj or derivative of loss wrt output
             J_wrt_Yj = self.deriv_mse_wrt_Yj(
-                neuron.activation_value, 
-                self.targets[0][j], 
+                neuron.activation_value,
+                self.targets[0][j],
                 len(self.layers[-1].neurons)
             )
             # dYj/dZj is derivative of sigmoid function wrt net input
@@ -224,6 +224,15 @@ class NeuralNetwork:
             # function wrt to the net input to the activation function
             neuron.calculate_deriv_activation_wrt_net_input()
             grad_J_wrt_Zj.append(J_wrt_Yj * neuron.deriv_activation_wrt_net_input)
+
+        #next, we calculate the gradients for loss with respect to the weights and bias
+        #Gradient of error wrt Wij calculates the influence of the weight between neuron i in layer l-1
+        #to the jth node in current layer l. Gradient of error wrt Bj is influence of bias on neuron j
+        #in layer l
+        for j, neuron in enumerate(self.layers[-1].neurons):
+            for i, previous_neuron enumerate(self.layers[-2].neurons):
+                pass
+
 
     def train(self):
 
