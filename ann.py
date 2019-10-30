@@ -24,9 +24,9 @@ class Neuron:
             "activation_value: {}".format(self.activation_value),
             "net_input: {}".format(self.net_input),
             "weights_in: {}".format(self.weights_in),
-            "dJs_wrt_Wi: {}".format(self.dJs_wrt_Wi), 
+            "dJs_wrt_Wi: {}".format(self.dJs_wrt_Wi),
             "bias_in: {}".format(self.bias_in),
-            "dJ_wrt_B: {}".format(self.dJ_wrt_B), 
+            "dJ_wrt_B: {}".format(self.dJ_wrt_B),
         ])
 
 
@@ -194,6 +194,8 @@ class NeuralNetwork:
                 continue
             layer.calculate_activation_for_neurons(self.layers[l-1])
 
+        print("Output for {} is {}".format(self.inputs[0], [n.activation_value for n in self.layers[-1].neurons ]))
+
 
     # returns 1/n * sum((y - t)**2) where n is number of output values/target values
     def mse(self):
@@ -211,7 +213,7 @@ class NeuralNetwork:
     #n is number of values in Y
     # dJ/dYj is d(MSE)/dYj = d/dYj( 1/n * [sum(Yj - Tj)**2 for j=1 to n] )
     # = 2/n * (Yj - Tj)
-        return (2/n) * (Yj - Tj)
+        return (1/n) * (Yj - Tj)
 
     def back_propigate(self):
         #layer counter
@@ -256,10 +258,9 @@ class NeuralNetwork:
         #in the previous layer with the gradients we've already calculated, we calculate from
         #the output layer to the input layer.
         l = l - 1
-        #while we are not on the input layer, step backwards caclculating the weight and 
+        #while we are not on the input layer, step backwards caclculating the weight and
         #bias adjustments
         while l >= 1:
-            print('l: {}'.format(l))
             for j, neuron in enumerate(self.layers[l].neurons):
                 sum_of_dJdZi_and_Wij = 0
                 for i, neuron_in_next_layer in enumerate(self.layers[l+1].neurons):
@@ -286,6 +287,17 @@ class NeuralNetwork:
                     weight = weight - (self.learning_rate * neuron.dJs_wrt_Wi[i])
                 neuron.bias_in = neuron.bias_in - (self.learning_rate * neuron.dJ_wrt_B)
 
+    def clean_nodes(self):
+        #Clean out nodes
+        for l, layer in enumerate(self.layers):
+            #layer 0 doesn't have any preceeding weights and biases
+            for neuron in layer.neurons:
+                neuron.activation_value = None
+                neuron.net_input = None
+                neuron.dJ_wrt_Z = None
+                neuron.dJs_wrt_Wi = []
+                neuron.dJ_wrt_B = None
+
     def train(self):
         #feed forward input vector
         self.feed_forward()
@@ -296,9 +308,12 @@ class NeuralNetwork:
         #Propigate the loss back through the network
         self.back_propigate()
 
+        #clean nodes
+        self.clean_nodes()
+
         #rotate input and target for next training call
-        self.inputs = self.inputs[1:] + self.inputs[:1]
-        self.targets = self.targets[1:] + self.targets[:1]
+        #self.inputs = self.inputs[1:] + self.inputs[:1]
+        #self.targets = self.targets[1:] + self.targets[:1]
         return J
 
 
@@ -314,9 +329,10 @@ ann = NeuralNetwork({
         'target_vectors': BINARY_T,
         'neuron_type': 'BinaryNeuron'
     },
-    'learning_rate': .1,
+    'learning_rate': .2,
 })
 
-print(ann)
-ann.train()
-print(ann)
+for i in range(1000):
+    print('Run {}:'.format(i))
+    J = ann.train()
+    print(J)
