@@ -1,5 +1,6 @@
 from math import exp
 from random import random
+import numpy as np
 
 #binary inputs for ANN
 BINARY_X = [[0, 0], [0, 1], [1, 0], [1, 1]]
@@ -35,7 +36,7 @@ class BinaryNeuron(Neuron):
         super().__init__()
 
     def binary_sigmoid(self, x):
-        return 1/(1+exp(-x))
+        return 1/(1+np.exp(-x))
 
     def binary_sigmoid_derivative(self, x):
         return self.binary_sigmoid(x)*(1 - self.binary_sigmoid(x))
@@ -52,7 +53,7 @@ class BipolarNeuron(Neuron):
         super().__init__()
 
     def bipolar_sigmoid(self, x):
-        return (exp(x)-exp(-x))/(exp(x)+exp(-x))
+        return (np.exp(x)-np.exp(-x))/(np.exp(x)+np.exp(-x))
 
     def bipolar_sigmoid_derivative(self, x):
         return 1 - self.bipolar_sigmoid(x)**2
@@ -312,8 +313,8 @@ class NeuralNetwork:
         self.clean_nodes()
 
         #rotate input and target for next training call
-        #self.inputs = self.inputs[1:] + self.inputs[:1]
-        #self.targets = self.targets[1:] + self.targets[:1]
+        self.inputs = self.inputs[1:] + self.inputs[:1]
+        self.targets = self.targets[1:] + self.targets[:1]
         return J
 
 
@@ -329,10 +330,16 @@ ann = NeuralNetwork({
         'target_vectors': BINARY_T,
         'neuron_type': 'BinaryNeuron'
     },
-    'learning_rate': .2,
+    'learning_rate': .1,
 })
 
 for i in range(1000):
     print('Run {}:'.format(i))
+    J = ann.train()
+    print(J)
+    J = ann.train()
+    print(J)
+    J = ann.train()
+    print(J)
     J = ann.train()
     print(J)
