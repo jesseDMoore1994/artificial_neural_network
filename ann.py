@@ -1,4 +1,6 @@
 import numpy as np
+from pprint import PrettyPrinter
+pp = PrettyPrinter()
 
 #binary inputs for ANN
 BINARY_X = [[0, 0], [0, 1], [1, 0], [1, 1]]
@@ -19,15 +21,21 @@ def bipolar_sigmoid(x):
 def bipolar_sigmoid_derivative(x):
     return 1 - self.bipolar_sigmoid(x)**2
 
-def mse():
-    squared_errors = []
-    print('calculating MSE')
-    for i, output_neuron in enumerate(self.layers[-1].neurons):
-        print('adding squared error = ({} - {})^2'.format(self.targets[0][i], output_neuron.activation_value))
-        squared_errors.append((self.targets[0][i] - output_neuron.activation_value)**2)
-    print('returning (sum({}) / {})'.format(squared_errors, len(squared_errors)))
-    return sum(squared_errors)/len(squared_errors)
+def create_weights_and_biases(layer_sizes):
+    WB = {}
+    #frst layer is ignored, since it is the input layer
+    for layer in range(len(layer_sizes)):
+        if layer == 0:
+            continue
+        W = np.random.randn(layer_sizes[layer], layer_sizes[layer-1])
+        B = np.zeros((layer_sizes[layer], 1))
+        WB['W{}'.format(layer)] = W
+        WB['B{}'.format(layer)] = B
+    return WB
 
 #number of nodes in layer
 #first layer is input, last layer is output, all other are hidden layers
-LAYER_SIZE = np.array([2, 4, 1])
+LAYER_SIZES = np.array([2, 4, 1])
+
+WEIGHTS_AND_BIASES = create_weights_and_biases(LAYER_SIZES)
+pp.pprint(WEIGHTS_AND_BIASES)
