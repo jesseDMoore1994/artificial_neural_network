@@ -174,12 +174,12 @@ class NeuralNetwork:
         for neuron in this_layer.neurons:
             weights_on_neuron = []
             for previous_neuron in previous_layer.neurons:
-                neuron.weights_in.append(random())
+                neuron.weights_in.append(np.random.randn())
 
     def _create_biases(self, this_layer):
         biases = []
         for neuron in this_layer.neurons:
-            neuron.bias_in = random()
+            neuron.bias_in = 0
         return biases
 
     def feed_forward(self):
@@ -333,7 +333,7 @@ ann = NeuralNetwork({
     'learning_rate': .1,
 })
 
-for i in range(1000):
+for i in range(10000):
     print('Run {}:'.format(i))
     J = ann.train()
     print(J)
