@@ -28,22 +28,58 @@ def create_weights_and_biases(layer_sizes):
         if layer == 0:
             continue
         W = np.random.randn(layer_sizes[layer], layer_sizes[layer-1])
-        B = np.zeros((layer_sizes[layer], 1))
+        B = np.random.randn(layer_sizes[layer], 1)
         WB['W{}'.format(layer)] = W
         WB['B{}'.format(layer)] = B
     return WB
 
+def feed_forward(input_vector, weights_and_biases, layer_sizes):
+    n = input_vector
+    wb = weights_and_biases
+    cache = {}
+    for layer in range(len(layer_sizes)):
+        #frst layer is ignored, since it is the input layer
+        if layer == 0:
+            continue
+        for node in range(layer_sizes[layer]):
+            #calculate activation
+            #ZXY = net input for node Y in layer X
+            #AXY = activation for node Y in layer X
+            #if layer is 1, use input vector, otherwise use previous activation
+            if layer == 1:
+                z = np.dot(wb['W1'][node], n) + wb['B1'][node]
+                a = binary_sigmoid(z)
+            else:
+                z = np.dot(
+                    #dot multiply the weights for the current node
+                    wb['W{}'.format(layer)][node],
+                    #with the activations from the previous layers nodes
+                    np.array(
+                        [ cache['A{}{}'.format(layer-1, y)] for y in range(layer_sizes[layer-1]) ]
+                    )
+                ) + wb['B{}'.format(layer)][node] #finally add the bias for the current node to get net input
+                a = binary_sigmoid(z)
+            cache['Z{}{}'.format(layer, node)] = z
+            cache['A{}{}'.format(layer, node)] = a
+    output = np.array([
+            cache['A{}{}'.format(len(layer_sizes)-1, y)]
+            for y in range(layer_sizes[-1])
+    ])
+    return output, cache
 
-def feed_forward(input_vectors, weights_and_biases):
-    pass
+
+def train(input_vectors, weights_and_biases, target_vectors, layer_sizes):
+    pp.pprint(input_vectors)
+    pp.pprint(target_vectors)
+    pp.pprint(weights_and_biases)
+    #apply each input vector to the neural network
+    for in_v, target_v in zip(input_vectors, target_vectors):
+        output, cache = feed_forward(in_v, weights_and_biases, layer_sizes)
+        pp.pprint(output)
+        pp.pprint(cache)
 
 #number of nodes in layer
 #first layer is input, last layer is output, all other are hidden layers
 LAYER_SIZES = np.array([2, 4, 1])
-
 WEIGHTS_AND_BIASES = create_weights_and_biases(LAYER_SIZES)
-Y = feed_forward(BINARY_X, WEIGHTS_AND_BIASES)
-pp.pprint(BINARY_X)
-pp.pprint(BINARY_T)
-pp.pprint(WEIGHTS_AND_BIASES)
-pp.pprint(BINARY_Y)
+train(BINARY_X, WEIGHTS_AND_BIASES, BINARY_T, LAYER_SIZES)
