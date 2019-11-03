@@ -39,14 +39,14 @@ class BinaryNeuron(Neuron):
         return 1/(1+np.exp(-x))
 
     def binary_sigmoid_derivative(self, x):
-        return self.binary_sigmoid(x)*(1 - self.binary_sigmoid(x))
+        return x*(1 - x)
 
     def calculate_activation_and_store_input(self, net_input):
         self.net_input = net_input
         self.activation_value = self.binary_sigmoid(net_input)
 
     def calculate_deriv_activation_wrt_net_input(self):
-        return self.binary_sigmoid_derivative(self.net_input)
+        return self.binary_sigmoid_derivative(self.activation_value)
 
 class BipolarNeuron(Neuron):
     def __init__(self):
@@ -56,14 +56,14 @@ class BipolarNeuron(Neuron):
         return (np.exp(x)-np.exp(-x))/(np.exp(x)+np.exp(-x))
 
     def bipolar_sigmoid_derivative(self, x):
-        return 1 - self.bipolar_sigmoid(x)**2
+        return 1 - x**2
 
     def calculate_activation_and_store_input(self, net_input):
         self.net_input = net_input
         self.activation_value = self.bipolar_sigmoid(net_input)
 
     def calculate_deriv_activation_wrt_net_input(self):
-        return self.bipolar_sigmoid_derivative(self.net_input)
+        return self.bipolar_sigmoid_derivative(self.activation_value)
 
 
 NEURON_MAP = {'BinaryNeuron': BinaryNeuron, 'BipolarNeuron': BipolarNeuron}
@@ -214,9 +214,10 @@ class NeuralNetwork:
     #n is number of values in Y
     # dJ/dYj is d(MSE)/dYj = d/dYj( 1/n * [sum(Yj - Tj)**2 for j=1 to n] )
     # = 2/n * (Yj - Tj)
-        return (1/n) * (Yj - Tj)
+        return (2/n) * (Yj - Tj)
 
     def back_propigate(self):
+        print('backprop target {}'.format(self.targets[0]))
         #layer counter
         l = len(self.layers) - 1
         #Start with the output layer
