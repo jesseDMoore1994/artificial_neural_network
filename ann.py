@@ -12,14 +12,14 @@ BIPOLAR_T = np.array([[-1], [1], [1], [-1]])
 def binary_sigmoid(x):
     return 1/(1+np.exp(-x))
 
-def binary_sigmoid_derivative(x):
-    return self.binary_sigmoid(x)*(1 - self.binary_sigmoid(x))
+def binary_sigmoid_derivative(a):
+    return a*(1 - a)
 
 def bipolar_sigmoid(x):
     return (np.exp(x)-np.exp(-x))/(np.exp(x)+np.exp(-x))
 
 def bipolar_sigmoid_derivative(x):
-    return 1 - self.bipolar_sigmoid(x)**2
+    return 1 - a**2
 
 def create_weights_and_biases(layer_sizes):
     WB = {}
@@ -58,25 +58,45 @@ def feed_forward(input_vector, weights_and_biases, layer_sizes):
                         [ cache['A{}{}'.format(layer-1, y)] for y in range(layer_sizes[layer-1]) ]
                     )
                 ) + wb['B{}'.format(layer)][node] #finally add the bias for the current node to get net input
-                a = binary_sigmoid(z)
+                a = binary_sigmoid(z) #calculate activaton
             cache['Z{}{}'.format(layer, node)] = z
             cache['A{}{}'.format(layer, node)] = a
+    #output is activation of final layer
     output = np.array([
             cache['A{}{}'.format(len(layer_sizes)-1, y)]
             for y in range(layer_sizes[-1])
     ])
     return output, cache
 
+def calculate_error(output, target_vector):
+    return (1/2*len(output))*(target_vector - output)**2
+
+def back_propigate(output, target, cache, wb, layer_sizes):
+    error = calculate_error(output, target)
+    print('error')
+    pp.pprint(error)
+    grad_J_wrt_ZL = np.zeros_like(output)
+    print(grad_J_wrt_ZL)
+    for node_idx in range(layer_sizes[-1]):
+        grad_J_wrt_ZL[node_idx] =
+
 
 def train(input_vectors, weights_and_biases, target_vectors, layer_sizes):
-    pp.pprint(input_vectors)
-    pp.pprint(target_vectors)
-    pp.pprint(weights_and_biases)
     #apply each input vector to the neural network
     for in_v, target_v in zip(input_vectors, target_vectors):
         output, cache = feed_forward(in_v, weights_and_biases, layer_sizes)
+        print('------------------------------------------')
+        print('input')
+        pp.pprint(in_v)
+        print('target')
+        pp.pprint(target_v)
+        print('output')
         pp.pprint(output)
+        print('weight bias vectors')
+        pp.pprint(weights_and_biases)
+        print('cache')
         pp.pprint(cache)
+        back_propigate(output, target_v, cache, weights_and_biases, layer_sizes)
 
 #number of nodes in layer
 #first layer is input, last layer is output, all other are hidden layers
