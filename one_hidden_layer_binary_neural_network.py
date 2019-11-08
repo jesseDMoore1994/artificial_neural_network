@@ -13,7 +13,7 @@ def sigmoid(z, derivative=False):
     return 1/(1+np.exp(-z))
 
 
-class OneHiddenLayerNeuralNetwork:
+class OneHiddenLayerBinaryNeuralNetwork:
     def __init__(self, X, T, H, alpha):
         self.X = X
         self.T = T
@@ -63,20 +63,26 @@ class OneHiddenLayerNeuralNetwork:
         self.bias12 = self.bias12 + self.learning_rate * dJdB12
 
 
-NN = OneHiddenLayerNeuralNetwork(BINARY_X, BINARY_T, 4, 0.1)
+NN = OneHiddenLayerBinaryNeuralNetwork(BINARY_X, BINARY_T, 4, 0.1)
 last_cost = None
 cost_diff = 1
 
-def_calculate_cost():
-    pass
+output_values = NN.feed_forward()
+last_cost = np.mean(np.square(BINARY_T - output_values))
+NN.back_propigation()
+count = 0
 
-while cost_diff > .0000001:
+while np.sqrt(np.square(cost_diff)) > .00000000001:
     output_values = NN.feed_forward()
+    cost = np.mean(np.square(BINARY_T - output_values))
     NN.back_propigation()
-    print(last_cost)
-    if not last_cost:
-        last_cost = cost
-        continue
     cost_diff = cost - last_cost
-    print(cost_diff)
+    if count % 100 == 0:
+        print("training iteration: {}".format(count))
+        print("input for network:\n{}".format(BINARY_X))
+        print("output for network:\n{}".format(output_values))
+        print("target for network:\n{}".format(BINARY_T))
+        print("Current Cost: {}".format(cost))
+        print("Cost diff from last iteration: {}".format(cost_diff))
     last_cost = cost
+    count = count + 1
