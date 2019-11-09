@@ -10,62 +10,59 @@ def bipolar_sigmoid(z, derivative=False):
     return -1 + 2/(1+np.exp(-z))
 
 
-class OneHiddenLayerBipolarNeuralNetwork:
-    def __init__(self, X, T, H, alpha):
+class TwoHiddenLayersBipolarNeuralNetwork:
+    def __init__(self, X, T, H, H2, alpha):
         self.X = X
         self.T = T
-        self.num_hidden = H
+        self.num_hidden1 = H
+        self.num_hidden2 = H2
         self.Y = np.zeros(self.T.shape)
         #weights and bias between layer 0 and 1
-        self.weights01 = np.random.rand(self.X.shape[1], self.num_hidden)
+        self.weights01 = np.random.rand(self.X.shape[1], self.num_hidden1)
         self.bias01 = np.random.rand()
         #weights between layer 1 and 2
-        self.weights12 = np.random.rand(self.num_hidden, self.T.shape[1])
+        self.weights12 = np.random.rand(self.num_hidden1, self.num_hidden2)
         self.bias12 = np.random.rand()
+        #weights between layer 2 and 3
+        self.weights23 = np.random.rand(self.num_hidden2, self.T.shape[1])
+        self.bias23 = np.random.rand()
         #learning rate
         self.learning_rate = alpha
 
     def feed_forward(self):
-        #start from input and go forward
         self.net_input1 = np.dot(self.X, self.weights01) + self.bias01
         self.activation1 = bipolar_sigmoid(self.net_input1)
-        #use activation from previous layer
         self.net_input2 = np.dot(self.activation1, self.weights12) + self.bias12
-        self.Y = bipolar_sigmoid(self.net_input2)
+        self.activation2 = bipolar_sigmoid(self.net_input2)
+        self.net_input3 = np.dot(self.activation2, self.weights23) + self.bias23
+        self.Y = bipolar_sigmoid(self.net_input3)
         return self.Y
 
     def back_propigation(self):
-        #start from the output layer and work backward
-        #calculate gradient of loss with respect to net input for output layer (dJ/dZ2)
-        #dJ/dZ2 = dJ/dY x dY/dZ2
-        #grad of J wrt Y = dJ/dY(||T-Y|||^2) = 2(T-Y)
-        #grad of Y wrt Z2 = dY/dZ2(1/(1+np.exp(-z))) = 1+np.exp(-z)) * (1 - 1+np.exp(-z)))
-        dJdZ2 = 2*(self.T - self.Y) * bipolar_sigmoid(self.Y, derivative=True)
-        #calculate gradient of loss with respect to weights from 1 to 2
-        #dJ/dW12 = dZ2/dW12 x dJ/dZ2
-        #grad of J wrt dZ2 solved above
-        #grad of Z2 wrt W12 = (A1)T
-        dJdW12 = np.dot(self.activation1.T, dJdZ2)
-        dJdB12 = dJdZ2
-        #calculate gradient of loss with respect to net input for layer 1 (dJ/dZ1)
-        #dJ/dZ1 = f'(Z1) x (W12)T x dJ/dZ2
-        dJdZ1 = bipolar_sigmoid(self.activation1, derivative=True) * self.weights12.T * dJdZ2
-        #dJ/dW01 = (A1)T x dJdZ1
-        dJdW01 = np.dot(self.X.T, dJdZ1)
-        dJdB01 = dJdZ1
+        dj_dz3 = 2*(self.T - self.Y) * bipolar_sigmoid(self.Y, derivative=True)
+        dj_dw23 = np.dot(self.activation2.T, dj_dz3)
+        dj_db23 = dj_dz3
+        dj_dz2 = np.dot(dj_dz3, self.weights23.T) * bipolar_sigmoid(self.activation2, derivative=True)
+        dj_dw12 = np.dot(self.activation1.T,  dj_dz2)
+        dj_db12 = dj_dz2
+        dj_dz1 = np.dot(dj_dz2, self.weights12.T) * bipolar_sigmoid(self.activation1, derivative=True)
+        dj_dw01 = np.dot(self.X.T,  dj_dz1)
+        dj_db01 = dj_dz1
 
         #adjust weights and biases
-        self.weights01 = self.weights01 + self.learning_rate * dJdW01
-        self.bias01 = self.bias01 + self.learning_rate * dJdB01
-        self.weights12 = self.weights12 + self.learning_rate * dJdW12
-        self.bias12 = self.bias12 + self.learning_rate * dJdB12
+        self.weights01 = self.weights01 + self.learning_rate * dj_dw01
+        self.bias01 = self.bias01 + self.learning_rate * dj_db01
+        self.weights12 = self.weights12 + self.learning_rate * dj_dw12
+        self.bias12 = self.bias12 + self.learning_rate * dj_db12
+        self.weights23 = self.weights23 + self.learning_rate * dj_dw23
+        self.bias23 = self.bias23 + self.learning_rate * dj_db23
 
 #binary inputs for ANN
 BIPOLAR_X = np.array(([-1, -1], [-1, 1], [1, -1], [1, 1]))
 BIPOLAR_T = np.array(([-1], [1], [1], [-1]))
 
 #Define network with four hidden layers, learning rate 0.1
-NN = OneHiddenLayerBipolarNeuralNetwork(BIPOLAR_X, BIPOLAR_T, 4, 0.1)
+NN = TwoHiddenLayersBipolarNeuralNetwork(BIPOLAR_X, BIPOLAR_T, 3, 2, 0.1)
 
 #set up variables for training loop
 last_cost = None
@@ -105,4 +102,4 @@ plt.plot(iteration_no, cost_for_iter, 'b-', label='Bipolar Neural Network Cost p
 plt.xlabel('iteration')
 plt.ylabel('cost')
 plt.legend(loc='upper left')
-plt.savefig('bipolar_neural_network.png')
+plt.savefig('deep_bipolar_neural_network.png')
