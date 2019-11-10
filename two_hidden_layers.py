@@ -17,16 +17,12 @@ class TwoHiddenLayersBipolarNeuralNetwork:
         self.num_hidden1 = H
         self.num_hidden2 = H2
         self.Y = np.zeros(self.T.shape)
-        #weights and bias between layer 0 and 1
         self.weights01 = np.random.rand(self.X.shape[1], self.num_hidden1)
         self.bias01 = np.random.rand()
-        #weights between layer 1 and 2
         self.weights12 = np.random.rand(self.num_hidden1, self.num_hidden2)
         self.bias12 = np.random.rand()
-        #weights between layer 2 and 3
         self.weights23 = np.random.rand(self.num_hidden2, self.T.shape[1])
         self.bias23 = np.random.rand()
-        #learning rate
         self.learning_rate = alpha
 
     def feed_forward(self):
@@ -49,7 +45,6 @@ class TwoHiddenLayersBipolarNeuralNetwork:
         dj_dw01 = np.dot(self.X.T,  dj_dz1)
         dj_db01 = dj_dz1
 
-        #adjust weights and biases
         self.weights01 = self.weights01 + self.learning_rate * dj_dw01
         self.bias01 = self.bias01 + self.learning_rate * dj_db01
         self.weights12 = self.weights12 + self.learning_rate * dj_dw12
@@ -57,24 +52,19 @@ class TwoHiddenLayersBipolarNeuralNetwork:
         self.weights23 = self.weights23 + self.learning_rate * dj_dw23
         self.bias23 = self.bias23 + self.learning_rate * dj_db23
 
-#binary inputs for ANN
 BIPOLAR_X = np.array(([-1, -1], [-1, 1], [1, -1], [1, 1]))
 BIPOLAR_T = np.array(([-1], [1], [1], [-1]))
 
-#Define network with four hidden layers, learning rate 0.1
 NN = TwoHiddenLayersBipolarNeuralNetwork(BIPOLAR_X, BIPOLAR_T, 3, 2, 0.1)
 
-#set up variables for training loop
 last_cost = None
 cost_diff = 1
 count = 0
 
-#run the neural network once get the starting cost
 output_values = NN.feed_forward()
 last_cost = np.mean(np.square(BIPOLAR_T - output_values))
 NN.back_propigation()
 
-#variables to keep track of cost
 iteration_no = []
 cost_for_iter = []
 
@@ -96,7 +86,6 @@ while np.sqrt(np.square(cost_diff)) > .000001:
     last_cost = cost
     count = count + 1
 
-#Create a graph of the cost over the iterations
 plt.figure()
 plt.plot(iteration_no, cost_for_iter, 'b-', label='Bipolar Neural Network Cost per iteration')
 plt.xlabel('iteration')
