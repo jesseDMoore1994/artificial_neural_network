@@ -69,12 +69,12 @@ iteration_no = []
 cost_for_iter = []
 
 
-while np.sqrt(np.square(cost_diff)) > .000001:
+while np.sqrt(np.square(cost_diff)) > .000000001:
     output_values = NN.feed_forward()
     cost = np.mean(np.square(BIPOLAR_T - output_values))
     NN.back_propigation()
     cost_diff = cost - last_cost
-    if count % 100 == 0:
+    if count % 10000 == 0:
         print("training iteration: {}".format(count))
         print("input for network:\n{}".format(BIPOLAR_X))
         print("output for network:\n{}".format(output_values))
@@ -85,6 +85,13 @@ while np.sqrt(np.square(cost_diff)) > .000001:
         cost_for_iter.append(cost)
     last_cost = cost
     count = count + 1
+
+print("training iteration: {}".format(count))
+print("input for network:\n{}".format(BIPOLAR_X))
+print("output for network:\n{}".format(output_values))
+print("target for network:\n{}".format(BIPOLAR_T))
+print("Current Cost: {}".format(cost))
+print("Cost diff from last iteration: {}".format(cost_diff))
 
 plt.figure()
 plt.plot(iteration_no, cost_for_iter, 'b-', label='Bipolar Neural Network Cost per iteration')
